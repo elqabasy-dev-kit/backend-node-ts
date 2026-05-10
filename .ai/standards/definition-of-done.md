@@ -10,6 +10,7 @@
 - [ ] Lint/format passes
 - [ ] No debug logs or commented-out code
 - [ ] Sensitive data not logged
+- [ ] Consistency over perfection applied (naming/structure/errors/pagination consistent)
 
 ## Database / Prisma
 - [ ] Prisma schema updated (if needed)
@@ -38,6 +39,13 @@
 - [ ] Input validated/sanitized
 - [ ] Secrets handled via env/config only
 - [ ] Rate limiting/CORS/headers configured (if public)
+- [ ] No stack traces returned to clients
+- [ ] No raw DB/ORM errors returned to clients
+- [ ] No unnecessary internal IDs exposed
+- [ ] Mass assignment prevented (allowlist DTOs; no direct body-to-ORM)
+- [ ] Field exposure enforced via DTO/serializer (no `password`, no internal flags)
+- [ ] Auth secrets never logged (OAuth tokens, refresh tokens, TOTP secrets/codes)
+- [ ] WebAuthn/OAuth/2FA flows covered by tests (at least happy path + common failure)
 
 ## Ops & Delivery
 - [ ] Logging includes request correlation id

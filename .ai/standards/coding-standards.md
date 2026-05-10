@@ -48,6 +48,14 @@ Endpoints must follow the project's status code policy (see `.ai/standards/backe
 - Do not implement offset/page pagination (`offset`, `page`, `skip`) in API contracts.
 - Treat cursors as opaque strings; do not parse or rely on cursor internals in clients.
 
+## Authentication & Secrets
+- Never log auth credentials or secrets (passwords, OAuth tokens, refresh tokens, TOTP secrets, OTP codes).
+- Keep auth flows in a dedicated `auth` module with clear boundaries:
+  - controllers/handlers: validate input, call services, shape responses
+  - services: implement auth logic (OAuth, WebAuthn, 2FA)
+  - repos: persistence of users/credentials/tokens
+- Use allowlists for auth DTOs as well (no mass assignment).
+
 ## Response Messages & Mapping Keys
 When returning `message: { key, fallback }` (success or error):
 
@@ -75,6 +83,19 @@ When returning `message: { key, fallback }` (success or error):
 - Use transactions for multi-step writes.
 - Be explicit with Prisma `select` to avoid over-fetching.
 
+## Data Exposure & Mass Assignment
+- Never return stack traces in API responses.
+- Never return raw DB/ORM errors to clients; map to stable `error.code` + safe `message`.
+- Avoid exposing internal IDs unless required by the API contract.
+- Prevent mass assignment:
+  - Never spread/forward `req.body` into create/update.
+  - Use DTOs / schema allowlists for writable fields.
+
+## Field Exposure (DTO Layer)
+- Use DTOs/serializers for all outbound responses; do not return ORM entities directly.
+- Default-deny: expose only explicitly listed fields.
+- Never expose secrets (e.g., `password`, `password_hash`) or internal flags unless explicitly required by the API contract and reviewed.
+
 ## Testing Standards
 - Test pyramid:
   - Unit tests for pure logic
@@ -98,3 +119,10 @@ When returning `message: { key, fallback }` (success or error):
 - Avoid drive-by refactors.
 - Add tests with behavior changes.
 - Update Prisma migrations/schema as needed.
+
+## Consistency Over Perfection
+When choosing between a "better" approach and consistency with existing standards, prefer consistency:
+- Same naming
+- Same structure
+- Same error style
+- Same pagination style

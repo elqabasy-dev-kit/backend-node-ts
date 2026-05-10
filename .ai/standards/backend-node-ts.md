@@ -67,6 +67,18 @@ test/
 - OpenAPI:
   - Maintain a spec if the project is external-facing or multi-client.
 
+## URL Versioning
+Use URL path versioning for all HTTP APIs:
+
+```txt
+/api/v1/<domain>
+```
+
+Rules:
+- All routes are prefixed with `/api/v1`.
+- Do not introduce unversioned endpoints.
+- Version bumps (`/api/v2`) are reserved for breaking API changes.
+
 ## HTTP Status Code Policy
 Use these status codes consistently:
 
@@ -96,6 +108,22 @@ Rules:
   - `cursor` (opaque string; optional)
 - The cursor is opaque to clients; do not expose internal DB ids or raw timestamps without encoding.
 
+## List Query Format (Filters + Sort)
+Use this official query string format for list endpoints:
+
+```txt
+/<domain>?filter[role]=admin&sort=-created_at
+```
+
+Rules:
+- Filters use bracket notation: `filter[<field>]=<value>`.
+  - Example: `filter[role]=admin`
+- Sort uses a single `sort` param:
+  - Ascending: `sort=created_at`
+  - Descending: `sort=-created_at` (leading `-` means descending)
+- Field names in query params are `snake_case` and must match the API contract (not necessarily DB column names).
+- If an endpoint supports multiple filters, include multiple `filter[...]` params (one per field).
+
 ## Response Contract (Standard)
 All endpoints return a consistent JSON envelope:
 - `success`: boolean (always present)
@@ -103,6 +131,15 @@ All endpoints return a consistent JSON envelope:
 - `meta`: object (optional; used mainly for list endpoints)
 - `message`: object (optional; localized mapping + developer-provided fallback)
 - `error`: object (present on failure)
+
+## Consistency Rule (Most Important)
+Consistency over perfection.
+
+Rules:
+- Use the same naming conventions everywhere (snake_case in payloads/queries, consistent field names).
+- Use the same response structure everywhere (standard envelope).
+- Use the same error style everywhere (stable `error.code` + `message { key, fallback }`).
+- Use the same pagination style everywhere (cursor pagination only; never offset/page).
 
 ### JSON Key Casing
 All response payload keys use `snake_case` (including `has_next`, `next_cursor`, `request_id`).
@@ -182,6 +219,80 @@ Error rules:
 - Enforce authn/authz at route boundaries; re-check in service layer for critical actions.
 - Rate limit public endpoints (project-specific).
 - Use Helmet (Express/Fastify equivalents) + CORS configured explicitly.
+
+## Authentication Standards (OAuth/OIDC, WebAuthn, 2FA)
+Support multiple authentication methods while keeping a single, consistent session model.
+
+### OAuth / OIDC
+- Use OIDC Authorization Code flow (with PKCE for public clients).
+- Prefer OIDC (OpenID Connect) over "OAuth-only" whenever identity (profile/email) is needed.
+- Validate:
+  - issuer (`iss`)
+  - audience (`aud`)
+  - token signature and expiry
+  - nonce/state where applicable
+- Do not trust email verification claims without checking provider guarantees.
+- Store provider links in a dedicated table (provider + provider_user_id) and map to internal user id.
+
+### WebAuthn (Passkeys / Fingerprint)
+- Use WebAuthn for passwordless authentication with platform authenticators (biometrics) or security keys.
+- Treat WebAuthn credentials as authenticators owned by a user:
+  - store credential id, public key, sign count, transports, and device metadata
+- Always use server-generated challenges; challenges are single-use and short-lived.
+- Verify RP ID, origin, and user verification requirements.
+
+### 2FA (TOTP)
+- Support optional TOTP-based 2FA:
+  - enrollment (generate secret + QR)
+  - verification during enrollment
+  - enforcement on login when enabled
+- Support recovery/backup codes (single-use) for account recovery.
+- Never log OTP/TOTP codes or shared secrets.
+
+### Session Model (choose one and keep consistent)
+- Prefer stateless access tokens (JWT) + refresh tokens (rotating) OR server-side sessions (project decision).
+- Regardless of method, the user identity presented to downstream routes must be the same shape (e.g., `user_id`, roles/permissions).
+
+### Endpoint Conventions (suggested)
+```txt
+/api/v1/auth/oauth/<provider>/start
+/api/v1/auth/oauth/<provider>/callback
+/api/v1/auth/webauthn/register/options
+/api/v1/auth/webauthn/register/verify
+/api/v1/auth/webauthn/login/options
+/api/v1/auth/webauthn/login/verify
+/api/v1/auth/2fa/setup
+/api/v1/auth/2fa/verify
+/api/v1/auth/2fa/disable
+```
+
+## Security & Data Exposure Rules
+Apply these rules to all endpoints and logs:
+
+- Do not expose stack traces to clients (any environment).
+- Do not expose raw database errors to clients (constraint names, SQL details, Prisma error dumps).
+- Do not expose internal identifiers unless required by the API contract (avoid leaking DB primary keys, internal foreign keys, sequential ids).
+- Do not accept mass assignment:
+  - Never pass request bodies directly into ORM create/update calls.
+  - Use allowlists (`pick`/DTO schemas) for writable fields per endpoint.
+  - Ignore or reject unknown fields (project policy), but never persist them silently.
+
+## Field Exposure Policy (DTO / Serialization)
+Use a DTO/serialization layer to control what fields are returned to clients.
+
+Rules:
+- Default-deny: only explicitly exposed fields are returned.
+- Never return secrets or sensitive fields (even to admins unless explicitly required and reviewed).
+- Hide internal-only fields by default.
+
+Examples (must not be returned):
+- `password` / `password_hash`
+- internal flags (e.g., `is_internal`, `is_deleted`, `is_system`, `internal_notes`)
+- internal IDs/keys not needed by the API contract
+
+Implementation guidance:
+- Map DB models -> DTOs (do not return ORM entities directly).
+- Prefer explicit `select` in Prisma queries + DTO mapping to avoid accidental exposure.
 
 ## Performance
 - Prefer DB-side filtering/pagination over in-memory.

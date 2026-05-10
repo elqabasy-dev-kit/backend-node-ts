@@ -20,6 +20,50 @@
 - Keep modules small; split by domain.
 - Prefer pure functions for transformations.
 
+## OOP Style (Controllers & Services)
+- Define controllers and services as exported classes.
+- Keep controller methods thin (HTTP concerns + validation); delegate business logic to service classes.
+- Prefer constructor injection for service dependencies when practical; avoid hidden globals.
+
+Example:
+```ts
+export class MeController {
+  private userService = new UserService();
+}
+
+export class MeService {}
+```
+
+## Comments Style
+- Avoid inline comments (`//`) except for very rare, high-signal notes.
+- Prefer block-based comments for non-obvious intent, constraints, or gotchas.
+- Comments should not restate what the code already clearly does.
+- Keep comments professional, meaningful, and minimal.
+
+Preferred format:
+```ts
+/**
+ * Why/intent/constraints (not line-by-line explanation).
+ */
+```
+
+## File Header Template (Required for `src/**/*.ts`)
+Every TypeScript file under `src/` must start with a header docblock that helps humans and AI quickly understand the file.
+
+Template:
+```ts
+/**
+ * @file path/from/src/to/file.ts
+ * @description Short, useful description of what this file does.
+ *              Keep it professional and do not restate obvious code.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
+```
+
+Rules:
+- `@file` must match the path relative to `src/`.
+- `@description` should explain intent/purpose and important constraints (if any).
+
 ## Validation & Parsing
 - Validate at the boundary (HTTP handler/controller).
 - Parse incoming data into typed DTOs using Zod (or project standard).
@@ -43,10 +87,24 @@ Endpoints must follow the project's status code policy (see `.ai/standards/backe
 - `409` conflict
 - `500` server error
 
+## Response Helpers
+- Use shared helpers to build JSON responses (success, error, paginated list).
+- Controllers should call helpers; do not handcraft response envelopes per endpoint.
+- Helpers must match the standard envelope and `snake_case` fields in `.ai/standards/backend-node-ts.md`.
+
 ## Pagination
 - Use cursor pagination only for list endpoints (stateful continuation model).
 - Do not implement offset/page pagination (`offset`, `page`, `skip`) in API contracts.
 - Treat cursors as opaque strings; do not parse or rely on cursor internals in clients.
+- Pagination logic belongs in repositories (or a shared infra helper used by repositories), not controllers.
+- Services should accept pagination inputs (`limit`, optional `cursor`) and pass them through to repositories.
+
+## Caching (Redis)
+- Use Redis for shared caching where it meaningfully improves latency/load.
+- Always set TTLs; avoid infinite caches unless explicitly justified.
+- Use key namespaces and consistent key builders (avoid ad-hoc strings scattered in code).
+- Cache-aside pattern by default (read-through with fallback to DB), and explicitly invalidate on writes.
+- Never cache secrets or authentication credentials.
 
 ## Authentication & Secrets
 - Never log auth credentials or secrets (passwords, OAuth tokens, refresh tokens, TOTP secrets, OTP codes).
@@ -126,3 +184,9 @@ When choosing between a "better" approach and consistency with existing standard
 - Same structure
 - Same error style
 - Same pagination style
+
+## Quality & Reuse (No Reinventing)
+- Write clean, reusable, high-quality code; favor clarity and maintainability.
+- Prefer existing utilities/modules and well-maintained libraries over custom implementations.
+- Avoid duplicating logic across modules; extract shared helpers when patterns repeat.
+- Performance matters: prevent obvious inefficiencies (N+1 queries, over-fetching, missing indexes, unnecessary allocations).

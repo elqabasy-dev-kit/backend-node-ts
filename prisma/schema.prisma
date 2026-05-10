@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  USER
+}
+
+model User {
+  id       String  @id @default(uuid())
+  username String  @unique
+  password String
+  email    String? @unique
+  fName    String?
+  lName    String?
+  phone    String?
+
+  // Auth state
+  lastLoginAt           DateTime?
+  refreshTokenHash      String?
+  refreshTokenExpiresAt DateTime?
+  tokenVersion          Int       @default(0)
+
+  // Security
+  otpFailedAttempts           Int       @default(0)
+  otpLockedUntil              DateTime?
+  twoFactorEnabled            Boolean   @default(false)
+  twoFactorSecret             String?
+  twoFactorVerifiedAt         DateTime?
+  twoFactorRecoveryCodeHashes String[]
+
+  // Avatar (Flattened)
+  avatarObjectKey    String?
+  avatarOriginalName String?
+  avatarMimeType     String?
+  avatarSize         Int?
+  avatarUploadedAt   DateTime?
+
+  role        Role     @default(USER)
+  active      Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  permissions String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  webAuthnCredentials WebAuthnCredential[]
+
+  @@map("users")
+}
+
+model WebAuthnCredential {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  credentialId String  @unique
+  publicKey    Bytes
+  counter      Int     @default(0)
+  deviceName   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("webauthn_credentials")
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  level     String
+  message   String
+  metadata  Json?
+
+  @@map("logs")
+}
+
+
+

@@ -32,6 +32,8 @@ Ask up to 10 questions, but prefer 4-7. Prioritize unknowns that change implemen
 15) Field exposure: Do we use a DTO/serializer layer, and which internal fields must be hidden (e.g., password, internal flags)?
 16) Consistency: Confirm we prioritize "consistency over perfection" (same naming/structure/error style/pagination style across the API)?
 17) Authentication: Which methods are in scope (OAuth/OIDC providers, WebAuthn/passkeys, TOTP 2FA), and what is the session model (JWT+refresh vs server sessions)?
+18) Helpers: Where are the shared response helpers and cursor pagination helper located in this repo (or should we add them)?
+19) Postman: Should we maintain a repo-root `postman_collection.json` and run it in CI via Newman? What auth bootstrap should it use?
 ```
 
 ## Step 2 -- Summarize (after answers)

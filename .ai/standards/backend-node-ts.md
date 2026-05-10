@@ -12,6 +12,7 @@ This document defines baseline standards for backend services built with:
 - Framework: (choose one) Express / Fastify / NestJS (project-specific)
 - ORM: Prisma
 - DB: PostgreSQL (preferred) / MySQL (allowed) / SQLite (dev-only)
+- Cache: Redis (preferred) for fast/shared caching
 - Validation: Zod (preferred) or class-validator (Nest)
 - Logging: pino (preferred) or Winston
 - Testing: Vitest or Jest + Supertest
@@ -36,6 +37,31 @@ src/
   lib/
   utils/
 test/
+```
+
+## Code Structure (OOP Controllers/Services)
+Prefer OOP style for HTTP controllers and services:
+- Controllers and services are classes exported from their modules.
+- Prefer constructor injection for dependencies when practical; otherwise use explicit private fields.
+
+Example:
+```ts
+export class MeController {
+  private userService = new UserService();
+}
+
+export class MeService {}
+```
+
+## Source File Headers (Required)
+All `src/**/*.ts` files must start with a header docblock:
+```ts
+/**
+ * @file path/from/src/to/file.ts
+ * @description Short, useful description of what this file does.
+ *              Keep it professional and do not restate obvious code.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
 ```
 
 ## Environment & Configuration
@@ -108,6 +134,76 @@ Rules:
   - `cursor` (opaque string; optional)
 - The cursor is opaque to clients; do not expose internal DB ids or raw timestamps without encoding.
 
+### Architectural Placement
+Controller
+  ↓
+Service
+  ↓
+Repository (calls pagination helper)
+  ↓
+Database
+
+Pagination logic belongs in:
+- Repository layer, OR
+- a shared infra utility used by repositories
+
+Not in controllers.
+
+### Goal
+- Strong typing
+- Reusable across entities
+- No pagination logic duplication
+- Deterministic ordering (sort key + tie-breaker)
+- Opaque cursors
+
+### Cursor Pagination Types (TypeScript, snake_case meta)
+```ts
+export type CursorPayload = {
+  sort_value: unknown
+  tie_breaker: string | number
+}
+
+export type CursorPaginationParams<TSortField extends string, TTieBreaker extends string> = {
+  limit: number
+  cursor?: string
+  sort_field: TSortField
+  sort_direction?: "ASC" | "DESC"
+  tie_breaker: TTieBreaker
+}
+
+export type CursorPaginationMeta = {
+  limit: number
+  has_next: boolean
+  has_previous: boolean
+  next_cursor: string | null
+  previous_cursor: string | null
+}
+
+export type CursorPaginationLinks = {
+  self: string
+  next: string | null
+  previous: string | null
+}
+
+export type CursorPaginationResult<T> = {
+  data: T[]
+  meta: CursorPaginationMeta
+  links: CursorPaginationLinks
+}
+```
+
+### Cursor Encoding / Decoding (Typed)
+```ts
+export function encode_cursor(payload: unknown): string {
+  return Buffer.from(JSON.stringify(payload)).toString("base64")
+}
+
+export function decode_cursor<T>(cursor?: string): T | null {
+  if (!cursor) return null
+  return JSON.parse(Buffer.from(cursor, "base64").toString()) as T
+}
+```
+
 ## List Query Format (Filters + Sort)
 Use this official query string format for list endpoints:
 
@@ -140,6 +236,26 @@ Rules:
 - Use the same response structure everywhere (standard envelope).
 - Use the same error style everywhere (stable `error.code` + `message { key, fallback }`).
 - Use the same pagination style everywhere (cursor pagination only; never offset/page).
+
+## Reusable Response Helpers
+To prevent inconsistency, use shared helpers to build API responses:
+- success (single item)
+- success (cursor-paginated list)
+- error (standard envelope + error shape)
+
+Rules:
+- Controllers must use response helpers; do not handcraft JSON shapes per endpoint.
+- Helpers must output the standard envelope and `snake_case` fields exactly as documented.
+- Services return typed domain data; controllers decide HTTP status codes and call helpers.
+
+## Engineering Quality Principles
+Build clean, reusable, high-quality, and high-performance code.
+
+Rules:
+- Prefer proven libraries/patterns; do not reinvent the wheel.
+- Keep modules reusable and composable (services/repositories with clear responsibilities).
+- Optimize for correctness first, then performance with measurement (logs/metrics/profiling).
+- Avoid premature micro-optimizations, but do address obvious bottlenecks (N+1 queries, missing indexes, unbounded loops).
 
 ### JSON Key Casing
 All response payload keys use `snake_case` (including `has_next`, `next_cursor`, `request_id`).
@@ -299,11 +415,28 @@ Implementation guidance:
 - Avoid N+1 queries; use Prisma `include/select` thoughtfully.
 - Use indexes for common lookup keys (unique/foreign keys, cursor columns).
 
+## Caching (Redis)
+Use Redis as the default caching mechanism for fast/shared data (when caching is needed).
+
+Use cases:
+- Read-heavy lookups (reference data, feature flags, configuration snapshots)
+- Rate limiting counters and request throttling state
+- Idempotency keys (when applicable)
+- Temporary session/verification data (project-specific)
+
+Rules:
+- Treat cache as an optimization: the source of truth remains the database.
+- Always set explicit TTLs; avoid unbounded keys.
+- Use namespaced keys (example): `app:<env>:<domain>:<key>`
+- Invalidate/refresh cache on writes that affect cached reads (define per endpoint/service).
+- Never cache sensitive secrets (passwords, tokens, TOTP secrets).
+
 ## CI Expectations
 - Typecheck must pass.
 - Lint must pass.
 - Tests must pass.
 - Prisma schema validation must pass.
+- Postman collection tests must pass (Newman) when `postman_collection.json` is present.
 
 ## Minimal "New Module" Checklist
 - Route(s) + request validation

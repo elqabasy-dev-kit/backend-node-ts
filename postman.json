@@ -1,0 +1,705 @@
+{
+	"info": {
+		"name": "backend-node-ts",
+		"_postman_id": "6f2d7cc9-c7c1-4c93-a40f-211f0e123abc",
+		"description": "Comprehensive API contract, All responses follow { success, data } on success and { success, error } on failure.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl', 'http://localhost:3030/api/v1');",
+					"if (!pm.collectionVariables.get('accessToken')) pm.collectionVariables.set('accessToken', '');",
+					"if (!pm.collectionVariables.get('refreshToken')) pm.collectionVariables.set('refreshToken', '');",
+					"if (!pm.collectionVariables.get('challengeToken')) pm.collectionVariables.set('challengeToken', '');",
+					"if (!pm.collectionVariables.get('username')) pm.collectionVariables.set('username', 'admin');",
+					"if (!pm.collectionVariables.get('password')) pm.collectionVariables.set('password', 'password');",
+					"if (!pm.collectionVariables.get('newPassword')) pm.collectionVariables.set('newPassword', 'password');",
+					"if (!pm.collectionVariables.get('email')) pm.collectionVariables.set('email', 'admin@gmail.com');",
+					"if (!pm.collectionVariables.get('fName')) pm.collectionVariables.set('fName', 'Driver');",
+					"if (!pm.collectionVariables.get('lName')) pm.collectionVariables.set('lName', 'Demo');",
+					"if (!pm.collectionVariables.get('phone')) pm.collectionVariables.set('phone', '+201000000000');"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/health"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.expect(pm.response.code).to.eql(200);"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"auth": {
+				"type": "noauth"
+			},
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"email\": \"{{email}}\",\n  \"fName\": \"{{fName}}\",\n  \"lName\": \"{{lName}}\",\n  \"phone\": \"{{phone}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/register",
+						"description": "Returns 201 on first registration, 409 if user/email already exists."
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/login",
+						"description": "Can return token pair directly, or twoFactorRequired=true with challengeToken."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+									"    pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+									"    console.log(\"Tokens saved to variables.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Verify Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challengeToken\": \"{{challengeToken}}\",\n  \"code\": \"{{twoFactorCode}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/2fa/verify-login"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = (pm.response.json() || {}).data || {};",
+									"  pm.collectionVariables.set('accessToken', data.accessToken || '');",
+									"  pm.collectionVariables.set('refreshToken', data.refreshToken || '');",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/refresh"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = (pm.response.json() || {}).data || {};",
+									"  pm.collectionVariables.set('accessToken', data.accessToken || '');",
+									"  pm.collectionVariables.set('refreshToken', data.refreshToken || '');",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/auth/logout"
+					}
+				},
+				{
+					"name": "Reset Password",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"oldPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/reset-password"
+					}
+				},
+				{
+					"name": "WebAuthn - Login Start",
+					"auth": {
+						"type": "noauth"
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/auth/webauthn/login/start",
+						"description": "Start biometric login. Returns challenge and allowed credentials."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = (pm.response.json() || {}).data || {};",
+									"  pm.collectionVariables.set('webauthnLoginChallenge', data.challenge || '');",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "WebAuthn - Login Finish",
+					"auth": {
+						"type": "noauth"
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"credential\": { \"id\": \"\", \"rawId\": \"\", \"response\": {}, \"type\": \"public-key\" },\n  \"challenge\": \"{{webauthnLoginChallenge}}\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/webauthn/login/finish",
+						"description": "Complete biometric login with credential from navigator.credentials.get()"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = (pm.response.json() || {}).data || {};",
+									"  pm.collectionVariables.set('accessToken', data.accessToken || '');",
+									"  pm.collectionVariables.set('refreshToken', data.refreshToken || '');",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Me",
+			"item": [
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/me"
+					}
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fName\": \"Driver\",\n  \"lName\": \"Updated\",\n  \"phone\": \"+201011112223\"\n}"
+						},
+						"url": "{{baseUrl}}/me"
+					}
+				},
+				{
+					"name": "Upload Image",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": "{{baseUrl}}/me/avatar"
+					}
+				},
+				{
+					"name": "Get Image URL",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/me/avatar/url"
+					}
+				},
+				{
+					"name": "Delete Image",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseUrl}}/me/avatar"
+					}
+				},
+				{
+					"name": "Setup 2FA",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/me/2fa/setup"
+					}
+				},
+				{
+					"name": "Verify 2FA",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"secret\": \"{{twoFactorSecret}}\",\n  \"code\": \"{{twoFactorCode}}\"\n}"
+						},
+						"url": "{{baseUrl}}/me/2fa/verify-setup"
+					}
+				},
+				{
+					"name": "Disable 2FA",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"{{twoFactorCode}}\"\n}"
+						},
+						"url": "{{baseUrl}}/me/2fa/disable"
+					}
+				},
+				{
+					"name": "WebAuthn - Register Start",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/me/webauthn/register/start",
+						"description": "Get WebAuthn registration options. User must scan QR code with authenticator app to get verification options."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = (pm.response.json() || {}).data || {};",
+									"  pm.collectionVariables.set('webauthnChallenge', data.challenge || '');",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "WebAuthn - Register Finish",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"credential\": { \"id\": \"\", \"rawId\": \"\", \"response\": {}, \"type\": \"public-key\" },\n  \"deviceName\": \"My Device\"\n}"
+						},
+						"url": "{{baseUrl}}/me/webauthn/register/finish",
+						"description": "Complete WebAuthn registration with credential from navigator.credentials.create()"
+					}
+				},
+				{
+					"name": "WebAuthn - Get Credentials",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/me/webauthn/credentials",
+						"description": "List all registered biometric credentials for current user"
+					}
+				},
+				{
+					"name": "WebAuthn - Delete Credential",
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{accessToken}}",
+								"type": "string"
+							}
+						]
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"credentialId\": \"\"\n}"
+						},
+						"url": "{{baseUrl}}/me/webauthn/credentials",
+						"description": "Remove a registered biometric credential"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/users?page=1&limit=20&sortBy=fName&sortOrder=asc"
+					}
+				},
+				{
+					"name": "Get User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/users/{{targetUserId}}"
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\",\n  \"email\": \"test@test.com\",\n  \"fName\": \"Test\",\n  \"lName\": \"User\",\n  \"phone\": \"+123456789\"\n}"
+						},
+						"url": "{{baseUrl}}/users"
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fName\": \"Updated\"\n}"
+						},
+						"url": "{{baseUrl}}/users/{{targetUserId}}"
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseUrl}}/users/{{targetUserId}}"
+					}
+				},
+				{
+					"name": "Enable User",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": "{{baseUrl}}/users/{{targetUserId}}/enable"
+					}
+				},
+				{
+					"name": "Disable User",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": "{{baseUrl}}/users/{{targetUserId}}/disable"
+					}
+				},
+				{
+					"name": "Update User Permissions",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"permissions\": [\"monitor:read\", \"users:read\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{targetUserId}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{targetUserId}}",
+								"permissions"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3030/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		},
+		{
+			"key": "refreshToken",
+			"value": ""
+		},
+		{
+			"key": "challengeToken",
+			"value": ""
+		},
+		{
+			"key": "username",
+			"value": "mahros"
+		},
+		{
+			"key": "password",
+			"value": "password"
+		},
+		{
+			"key": "newPassword",
+			"value": "password"
+		},
+		{
+			"key": "email",
+			"value": "mahros@gmail.com"
+		},
+		{
+			"key": "fName",
+			"value": "Driver"
+		},
+		{
+			"key": "lName",
+			"value": "Demo"
+		},
+		{
+			"key": "phone",
+			"value": "+201000000000"
+		},
+		{
+			"key": "twoFactorCode",
+			"value": "000000"
+		},
+		{
+			"key": "twoFactorSecret",
+			"value": ""
+		},
+		{
+			"key": "targetUserId",
+			"value": ""
+		}
+	]
+}

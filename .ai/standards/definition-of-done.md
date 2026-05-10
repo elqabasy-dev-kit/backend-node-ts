@@ -11,6 +11,8 @@
 - [ ] No debug logs or commented-out code
 - [ ] Sensitive data not logged
 - [ ] Consistency over perfection applied (naming/structure/errors/pagination consistent)
+- [ ] No reinventing the wheel (reuse existing modules/libraries where appropriate)
+- [ ] `src/**/*.ts` files include `@file` + `@description` header docblock
 
 ## Database / Prisma
 - [ ] Prisma schema updated (if needed)
@@ -31,6 +33,8 @@
 - [ ] OpenAPI/spec updated (if used)
 - [ ] All endpoints return the standard envelope (`success`, `data`, optional `meta`, optional `message`, optional `error`)
 - [ ] List endpoints use cursor pagination only (no offset/page), with `meta.limit/has_next/has_previous/next_cursor/previous_cursor` and `links`
+- [ ] Controllers use shared response helpers (no handcrafted envelopes)
+- [ ] Pagination logic is in repositories/shared infra (not controllers)
 - [ ] Any `message.key` used comes from the project's message key registry (no invented keys)
 - [ ] Any `message.key` includes a developer-provided `message.fallback`
 
@@ -51,3 +55,5 @@
 - [ ] Logging includes request correlation id
 - [ ] Rollout plan stated (migration order, feature flag if needed)
 - [ ] Documentation updated (README/notes)
+- [ ] If Redis caching is used: TTLs defined, key namespace consistent, invalidation/refresh strategy documented
+- [ ] `postman_collection.json` updated (if API changed) and Newman tests pass

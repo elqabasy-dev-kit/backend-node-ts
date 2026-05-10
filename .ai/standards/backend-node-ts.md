@@ -13,7 +13,7 @@ This document defines baseline standards for backend services built with:
 - ORM: Prisma
 - DB: PostgreSQL (preferred) / MySQL (allowed) / SQLite (dev-only)
 - Cache: Redis (preferred) for fast/shared caching
-- Validation: Zod (preferred) or class-validator (Nest)
+- Validation: Zod (required)
 - Logging: pino (preferred) or Winston
 - Testing: Vitest or Jest + Supertest
 

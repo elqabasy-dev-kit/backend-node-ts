@@ -66,7 +66,7 @@ Rules:
 
 ## Validation & Parsing
 - Validate at the boundary (HTTP handler/controller).
-- Parse incoming data into typed DTOs using Zod (or project standard).
+- Parse incoming data into typed DTOs using Zod (required).
 - Never trust `req.body`/`req.query` without validation.
 
 ## Error Handling

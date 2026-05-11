@@ -1,3 +1,9 @@
+/**
+ * @file src/config/s3.config.ts
+ * @description S3 client configuration.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
+
 import { S3Client } from "@aws-sdk/client-s3";
 import { config } from "./index";
 

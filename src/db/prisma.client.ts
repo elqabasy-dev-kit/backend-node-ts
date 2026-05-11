@@ -1,7 +1,13 @@
+/**
+ * @file src/db/prisma.client.ts
+ * @description Prisma client setup using the new Prisma 7 adapter system for direct database connections.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
+
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.util";
 import { config } from "../config";
 
 /**

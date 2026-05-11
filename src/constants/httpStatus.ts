@@ -1,3 +1,9 @@
+/**
+ * @file src/constants/httpStatus.ts
+ * @description HTTP status codes.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
+
 export enum HttpStatus {
   // 2xx Success
   OK = 200,

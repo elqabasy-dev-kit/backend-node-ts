@@ -1,3 +1,9 @@
+/**
+ * @file src/utils/qr/index.ts
+ * @description Utility functions for generating branded QR codes. This includes functions to create QR codes with custom styles, embed brand logos, and generate data URLs for the QR codes. It also provides helper functions for creating SVG elements used in the QR code rendering process.
+ *              Also another usage is at the 2fa mdoule, where we can generate branded QR codes for the 2fa secrets, so the users can easily recognize the QR code as belonging to our application.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
 import { config } from "../../config";
 import { getBrandLogoDataUrl } from "./logo";
 import { renderBrandedQrSvg } from "./renderer";

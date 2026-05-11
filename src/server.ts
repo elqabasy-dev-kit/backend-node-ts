@@ -4,7 +4,7 @@ import { createApp } from './app';
 import { config } from './config';
 import { prisma } from './db';
 import { initSocket } from './utils/socket.util';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.util';
 
 const app = createApp();
 const server = http.createServer(app);

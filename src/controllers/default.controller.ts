@@ -1,11 +1,8 @@
 /**
- * @file default.controller.ts
+ * @file src/controllers/default.controller.ts
  * @description Default controller for handling basic endpoints.
- * @author Mahros
- * @created 2026-05-11
- * @updated 2024-06-11
+ * @author Mahros AL-Qabasy <mahros.dev>
  */
-
 
 class DefaultController {
     /**

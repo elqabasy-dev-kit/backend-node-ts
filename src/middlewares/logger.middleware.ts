@@ -1,10 +1,11 @@
 /**
- * @file middlewares/logger.middleware.ts
+ * @file src/middlewares/logger.middleware.ts
  * @description Middleware to log all incoming requests and outgoing responses with detailed context, including security-related information. It also persists logs to a database and emits security events for SOC monitoring.
+ * @author Mahros AL-Qabasy <mahros.dev>
  */
 
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.util";
 import { v4 as uuidv4 } from "uuid";
 import geoip from "geoip-lite";
 import { emitSecurityEvent } from "../utils/socket.util";

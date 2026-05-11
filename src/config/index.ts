@@ -1,3 +1,9 @@
+/**
+ * @file src/config/index.ts
+ * @description Application configuration loaded from environment variables with validation.
+ * @author Mahros AL-Qabasy <mahros.dev>
+ */
+
 import dotenv from "dotenv";
 import path from "path";
 import { z } from "zod";
@@ -169,6 +175,8 @@ export const config = {
   },
 
   auth: {
+    saltRounds: 10,
+
     jwt: {
       secret: env.JWT_SECRET,
       refreshSecret: env.JWT_REFRESH_SECRET,

@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { logger } from "../logger";
+import { logger } from "../logger.util";
 
 const logoCache = new Map<string, string | null>();
 

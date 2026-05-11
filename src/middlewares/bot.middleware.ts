@@ -2,6 +2,7 @@
  * @file middlewares/bot.middleware.ts
  * @description Middleware to detect and block requests from known bots and scanners based on User-Agent.
  *              It blocks common security scanning tools and search engine bots, while allowing legitimate tools like Postman.
+ * @author Mahros AL-Qabasy <mahros.dev>
  */
 
 import { Request, Response, NextFunction } from "express";

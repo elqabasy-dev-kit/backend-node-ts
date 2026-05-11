@@ -1,3 +1,10 @@
+/**
+ * @file prisma/seed.ts
+ * @description Seeds the database with an admin user if it doesn't already exist.
+ * The admin user details are read from a seed.json file.
+ * This script should be run using `npx ts-node prisma/seed.ts` after setting up the database.
+ */
+
 import { Role } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { prisma } from "../src/db";
@@ -33,7 +40,8 @@ async function main() {
         password: hashedPassword,
         fName: seed.admin.fName,
         lName: seed.admin.lName,
-        role: Role.ADMIN,
+        phone: seed.admin.phone,
+        role: Role.SUPER_ADMIN,
         active: true,
         permissions: seed.admin.permissions,
       },

@@ -1,7 +1,9 @@
 /**
- * @file middlewares/auth.middleware.ts
+ * @file src/middlewares/auth.middleware.ts
  * @description Middleware to authenticate requests using JWT tokens. It verifies the token, checks user status, and attaches user info to the request object for downstream handlers.
+ * @author Mahros AL-Qabasy <mahros.dev>
  */
+
 
 import { Request, Response, NextFunction } from "express";
 
